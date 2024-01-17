@@ -3,13 +3,15 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
 	"github.com/robwestbrook/snippetbox/internal/models"
 )
 
+/*
+	Home function is the handler for the home page
+*/
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Check for exact path to "/"
 	if r.URL.Path != "/" {
@@ -17,43 +19,23 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get the latest snippets
 	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	for _, snippet := range snippets {
-		fmt.Fprintf(w, "%+v\n", snippet)
-	}
-
-	// Initialize a slice containing the path to the
-	// template files. The base must be first.
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/home.tmpl",
-	}
-
-	// Parse template files and check for errors
-	// Template path is relative to the root of the
-	// project directory. If there are errors, use
-	// the application error log
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	// Execute the base template to write to response body
-	// The last parameter represents any dynamic data 
-	// to pass in
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	// Render the page
+	app.render(w, http.StatusOK, "home.tmpl", &templateData{
+		Snippets: snippets,
+	})
 }
 
+/*
+	snippetView function handles a single snippet page
+	determined by snippet ID
+*/
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// Get id from URL parameters query string
 	// and validate the id as an integer
@@ -74,38 +56,17 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
-	// Initialize a slice containing the path to the
-	// template files. The base must be first.
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/view.tmpl",
-	}
 
-	// Parse the template files
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	// Create an instance of a templateData struct
-	// to hold the snippet data
-	data := &templateData{
+	// Render the page
+	app.render(w, http.StatusOK, "view.tmpl", &templateData{
 		Snippet: snippet,
-	}
-
-	// Execute the template files, passing in the snippet
-	// data as the final parameter. The data passed to the
-	// template will contain a models.Snippet struct
-	// inside a templateData struct.
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	})
 }
 
+/*
+	snippetCreate function handles creating a new
+	snippet
+*/
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// Check for only a POST request
 	// and return error if not a POST request
