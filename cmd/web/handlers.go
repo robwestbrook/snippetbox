@@ -13,6 +13,7 @@ import (
 	Home function is the handler for the home page
 */
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
+	app.infoLog.Println("Home handler accessed...")
 	// Check for exact path to "/"
 	if r.URL.Path != "/" {
 		app.notFound(w)
@@ -26,10 +27,14 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Call the newTemplateData()helper to get a
+	// templateData struct containing the default
+	// data and add the snippets slice to it.
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
+
 	// Render the page
-	app.render(w, http.StatusOK, "home.tmpl", &templateData{
-		Snippets: snippets,
-	})
+	app.render(w, http.StatusOK, "home.tmpl", data)
 }
 
 /*
@@ -41,9 +46,11 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// and validate the id as an integer
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
+
+	app.infoLog.Println("Snippet View handler accessed for ID:", id)
 	
 	// Use SnippetModel's GET method to retrieve data
 	// for a record by ID. Return 404 if not found.
@@ -57,10 +64,14 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Call the newTemplateData()helper to get a
+	// templateData struct containing the default
+	// data and add the snippets slice to it.
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
+
 	// Render the page
-	app.render(w, http.StatusOK, "view.tmpl", &templateData{
-		Snippet: snippet,
-	})
+	app.render(w, http.StatusOK, "view.tmpl", data)
 }
 
 /*
@@ -68,6 +79,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	snippet
 */
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+	app.infoLog.Println("Sniipet Create handler accessed...")
 	// Check for only a POST request
 	// and return error if not a POST request
 	if r.Method != http.MethodPost {

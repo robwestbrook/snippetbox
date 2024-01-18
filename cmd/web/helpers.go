@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 )
 
 // ServerError helper.
@@ -31,6 +33,15 @@ func (app *application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
 
+// new template data function
+// Returns a pointer to a templateData struct initialized
+// with the current year.
+func (app *application) newTemplateData(r *http.Request) *templateData {
+	return &templateData{
+		CurrentYear: time.Now().Year(),
+	}
+}
+
 // render function
 func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
 	// Retrieve the template set from the cache based on
@@ -43,13 +54,24 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 		return
 	}
 
-	// Write an HTTP status code to header
-	w.WriteHeader(status)
+	// Initialize a new buffer for the templates
+	buf := new(bytes.Buffer)
 
-	// Execute the template and write response body. Any
+	// Execute the template and write to buffer. Any
 	// error calls the serverError() helper function.
-	err := ts.ExecuteTemplate(w, "base", data)
+	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
+
+	// If the template writes to the buffer without
+	// errors, it is safe. Write HTTP status code 
+	// to response writer.
+	w.WriteHeader(status)
+
+	// Write contents of buffer to the response writer,
+	// by passing the http.ResponseWriter to a function
+	// that takes an io.Writer.
+	buf.WriteTo(w)
 }
