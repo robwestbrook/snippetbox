@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/robwestbrook/snippetbox/internal/models"
 )
 
@@ -13,12 +14,6 @@ import (
 	Home function is the handler for the home page
 */
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	// Check for exact path to "/"
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
-
 	// Get the latest snippets
 	snippets, err := app.snippets.Latest()
 	if err != nil {
@@ -38,12 +33,17 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 /*
 	snippetView function handles a single snippet page
-	determined by snippet ID
+	determined by snippet ID, ID is stored in the request
+	context. Retrieve ID using the ParseFromContext(),
+	which returns a slice of parameter names and values.
 */
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
+	// Get request paramters
+	params := httprouter.ParamsFromContext(r.Context())
+
 	// Get id from URL parameters query string
 	// and validate the id as an integer
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil || id < 1 {
 		app.notFound(w)
 		return
@@ -71,19 +71,16 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view.tmpl", data)
 }
 
+/**/
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display snippet creation form..."))
+}
+
 /*
 	snippetCreate function handles creating a new
 	snippet
 */
-func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	app.infoLog.Println("Sniipet Create handler accessed...")
-	// Check for only a POST request
-	// and return error if not a POST request
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		app.clientError(w, http.StatusMethodNotAllowed)
-		return
-	}
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	title := "Is this a poem?"
 	content := "Roses are red\n violets are blue\n -Rob\n"
@@ -98,5 +95,5 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	// Redirect user to new snippet page
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
