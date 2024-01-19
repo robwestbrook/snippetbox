@@ -13,7 +13,6 @@ import (
 	Home function is the handler for the home page
 */
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	app.infoLog.Println("Home handler accessed...")
 	// Check for exact path to "/"
 	if r.URL.Path != "/" {
 		app.notFound(w)
@@ -50,8 +49,6 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.infoLog.Println("Snippet View handler accessed for ID:", id)
-	
 	// Use SnippetModel's GET method to retrieve data
 	// for a record by ID. Return 404 if not found.
 	snippet, err := app.snippets.Get(id)
