@@ -55,16 +55,25 @@ func (app *application) routes() http.Handler {
 		fileServer),
 	)
 
+	// Create a new middleware chain containing middleware
+	// specific to dynamic application routes. Alice
+	// manages middleware chains.
+	// Includes:
+	//	1. LoadAndSave session middleware
+	dynamic := alice.New(app.sessionManager.LoadAndSave)
 
-	// Create Routes with methods, patterns, handlers
-	router.HandlerFunc(http.MethodGet, "/", app.home)
-	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
-	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
-	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
+	// Create Routes with methods, patterns, handlers.
+	// Wrap the handlers with the dynamic middleware for
+	// session control.
+	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
+	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
+	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
+	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 
 	// Create a middleware chain containing the "standard"
 	// middleware which will be sent for every request
-	// the application receives.
+	// the application receives. Alice manages middleware 
+	// chains.
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
 	// Return the 'standard' middleware followed

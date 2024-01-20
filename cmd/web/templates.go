@@ -12,7 +12,8 @@ type templateData struct {
 	CurrentYear	int
 	Snippet			*models.Snippet 	// Hold a single snippet
 	Snippets		[]*models.Snippet	// holds many snippets
-	Form				any
+	Form				any								// holds form data
+	Flash				string						// Hold flash message data
 }
 
 /*

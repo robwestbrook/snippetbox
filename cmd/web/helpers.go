@@ -37,11 +37,15 @@ func (app *application) notFound(w http.ResponseWriter) {
 }
 
 // new template data function
-// Returns a pointer to a templateData struct initialized
-// with the current year.
+// Returns a pointer to a templateData struct.
+// The struct is initialized with the following
+// fields:
+//	1. The current year - adds the current year to a template
+//	2. Flash message - adds a flash message to a template
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		CurrentYear: time.Now().Year(),
+		CurrentYear: 	time.Now().Year(),
+		Flash: 				app.sessionManager.PopString(r.Context(), "flash"),
 	}
 }
 

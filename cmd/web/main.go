@@ -8,7 +8,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	// "github.com/alexedwards/scs"
+	"github.com/alexedwards/scs/sqlite3store"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/robwestbrook/snippetbox/internal/models"
@@ -24,6 +28,7 @@ type application struct {
 	snippets 				*models.SnippetModel
 	templateCache		map[string]*template.Template
 	formDecoder			*form.Decoder
+	sessionManager	*scs.SessionManager
 }
 
 // Open DB function
@@ -85,15 +90,33 @@ func main() {
 	// Initialize a form decoder instance
 	formDecoder := form.NewDecoder()
 
+	// Initialize a new session manager with scs.New().
+	// The scs.New() function returns a pointer to a struct
+	// which holds configuration settings for the sessions.
+	// Configure to use SQLite as session store, setting
+	// a lifetime of 12 hours for session.
+	sessionManager := scs.New()
+	sessionManager.Store = sqlite3store.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	// Initialize a new instance of the application struct,
 	// containing the dependencies. This makes all
 	// dependencies available to the handlers
+	//
+	// Dependencies available:
+	//	1. errorLog - error logger
+	//	2. infoLog - information logger
+	//	3. snippets - snippet model and methods
+	//	4. templateCache - template in-memory cache
+	// 	5. formDecoder - decodes all form input
+	//	6. sessionManager - manages all user sessions
 	app := &application{
 		errorLog: 			errorLog,
 		infoLog:  			infoLog,
 		snippets: 			&models.SnippetModel{DB: db},
 		templateCache: 	templateCache,
 		formDecoder: 		formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	// Initialize a new http.Server struct

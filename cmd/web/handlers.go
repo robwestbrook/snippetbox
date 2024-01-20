@@ -168,6 +168,13 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		app.serverError(w, err)
 		return
 	}
+
+	// Create a session value for a flash message to user
+	app.sessionManager.Put(
+		r.Context(),
+		"flash",
+		"Snippet successfully created!",
+	)
 	
 	// Redirect user to new snippet page
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
