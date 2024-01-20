@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"github.com/go-playground/form/v4"
 )
 
 // ServerError helper.
@@ -74,4 +77,34 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 	// by passing the http.ResponseWriter to a function
 	// that takes an io.Writer.
 	buf.WriteTo(w)
+}
+
+// decodePostForm function. The second parameter, dst,
+// is the target destination to decode the form data into
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+	// Call ParseForm() on the request
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	// Call Decode() on the decoder instance, passing the
+	// target destination as the first parameter
+	err = app.formDecoder.Decode(dst, r.PostForm)
+	if err != nil {
+		// With an invalid target destination, Decode()
+		// will return an error with the type
+		// *form.InvalidDecodeError. Use errors.As()
+		// to check for this error and raise a panic rather
+		// than returning the error
+		var invalidDecodeError *form.InvalidDecoderError
+
+		if errors.As(err, &invalidDecodeError) {
+			panic(err)
+		}
+
+		// For all errors, they are returned as normal
+		return err
+	}
+	return nil
 }

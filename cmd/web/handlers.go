@@ -73,19 +73,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-	Define a snippetCreateForm to represent the form data
-	and inherit all the fields and methods of the
-	Validator type. All fields are exported, so they 
-	are capitalized.
+	snippetCreate function responds to a GET function,
+	processes the form template, and present it to
+	the user.
 */
-type snippetCreateForm struct {
-	Title								string
-	Content 						string
-	Expires 						int
-	validator.Validator
-}
-
-/**/
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// Create a new template set
 	data := app.newTemplateData(r)
@@ -102,38 +93,41 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
+	Define a snippetCreateForm to represent the form data
+	and inherit all the fields and methods of the
+	Validator type. All fields are exported, so they 
+	are capitalized. 
+
+	The struct includes struct tags which which tell the
+	form decoder how to map HTML form values into struct
+	fields.
+*/
+type snippetCreateForm struct {
+	Title								string	`form:"title"`
+	Content 						string	`form:"content"`
+	Expires 						int			`form:"expires"`
+	validator.Validator					`form:"-"`
+}
+
+/*
 	snippetCreate function handles creating a new
 	snippet
 */
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 
-	// Call r.ParseForm() which adds any data in POST
-	// request bodies to the r.PostForm map. Any errors
-	// are processed with the app.ClientError() method.
-	err := r.ParseForm()
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
+	// Declare a new instance of the snippetCreateForm
+	// struct
+	var form snippetCreateForm
 
-	// The data is returned from r.PostForm.Get() as a
-	// string. The expires value must be a number.
-	// Convert it and send an error if it doesn't convert.
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	// Decode the form data using the decodePostForm
+	// helper function
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
 	// BEGIN VALIDATION
-
-	// Create an instance of snippetCreateForm struct
-	// containing form values and empty map for form errors
-	form := snippetCreateForm{
-		Title: 				r.PostForm.Get("title"),
-		Content:			r.PostForm.Get("content"),
-		Expires: 			expires,
-	}
 
 	// Check for blank title
 	 form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
@@ -169,7 +163,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	// Pass data to SnippetModel.Insert() method.
 	// The ID is returned
-	id, err := app.snippets.Insert(form.Title, form.Content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return
