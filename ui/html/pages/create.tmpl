@@ -1,0 +1,63 @@
+{{ define "title"}}
+  Create a New Snippet
+{{ end }}
+
+{{ define "main"}}
+  <form action="/snippet/create" method="post">
+    <div>
+      <label>Title:</label>
+      <!-- use the 'with' action to render the value
+      of .Form.FieldErrors.Title if it is not empty -->
+      {{with .Form.FieldErrors.title}}
+        <label class="error">{{ . }}</label>
+      {{ end }}
+      <!-- repopulate the title data by setting
+      the 'value' attribute -->
+      <input type="text" name="title" value="{{ .Form.Title }}" />
+    </div>
+    <div>
+      <label>Content:</label>
+      <!-- use the 'with' action to render the value
+      of .Form.FieldErrors.Title if it is not empty -->
+      {{ with .Form.FieldErrors.content }}
+        <label class="error">{{ . }}</label>
+      {{ end }}
+      <!-- repopulate the content data by setting
+      the 'value' attribute -->
+      <textarea name="content">{{ .Form.Content }}</textarea>
+    </div>
+    <div>
+      <label>Delete in:</label>
+      <!-- use the 'with' action to render the value
+      of .Form.FieldErrors.Title if it is not empty -->
+      {{ with .Form.FieldErrors.expires }}
+        <label class="error">{{ . }}</label>
+      {{ end }}
+      <!-- Use the 'if' action to check if the value
+      of the re-populated expires field equals 365.
+      If it does, then render the 'checked' attribute
+      so the radio input is re-selected. Do the same
+      for all possible values. -->
+      <input 
+        type="radio" 
+        name="expires" 
+        value="365" {{ if (eq .Form.Expires 365)}}checked{{ end }}
+        > One Year
+
+        <input 
+        type="radio" 
+        name="expires" 
+        value="7" {{ if (eq .Form.Expires 7)}}checked{{ end }}
+        > One Week
+      
+        <input 
+        type="radio" 
+        name="expires" 
+        value="1" {{ if (eq .Form.Expires 1)}}checked{{ end }}
+        > One Day
+    </div>
+    <div>
+      <input type="submit" value="Publish snippet">
+    </div>
+  </form>
+{{ end }}

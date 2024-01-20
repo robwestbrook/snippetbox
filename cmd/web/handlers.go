@@ -8,6 +8,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/robwestbrook/snippetbox/internal/models"
+	"github.com/robwestbrook/snippetbox/internal/validator"
 )
 
 /*
@@ -71,9 +72,33 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view.tmpl", data)
 }
 
+/*
+	Define a snippetCreateForm to represent the form data
+	and inherit all the fields and methods of the
+	Validator type. All fields are exported, so they 
+	are capitalized.
+*/
+type snippetCreateForm struct {
+	Title								string
+	Content 						string
+	Expires 						int
+	validator.Validator
+}
+
 /**/
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display snippet creation form..."))
+	// Create a new template set
+	data := app.newTemplateData(r)
+
+	// Initialize a new createSnippetForm instance and
+	// pass it to the template. This can be used to set
+	// any 'initial' values for the form.
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
+
+	// Render the template
+	app.render(w, http.StatusOK, "create.tmpl", data)
 }
 
 /*
@@ -82,13 +107,69 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 */
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 
-	title := "Is this a poem?"
-	content := "Roses are red\n violets are blue\n -Rob\n"
-	expires := 14
+	// Call r.ParseForm() which adds any data in POST
+	// request bodies to the r.PostForm map. Any errors
+	// are processed with the app.ClientError() method.
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// The data is returned from r.PostForm.Get() as a
+	// string. The expires value must be a number.
+	// Convert it and send an error if it doesn't convert.
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// BEGIN VALIDATION
+
+	// Create an instance of snippetCreateForm struct
+	// containing form values and empty map for form errors
+	form := snippetCreateForm{
+		Title: 				r.PostForm.Get("title"),
+		Content:			r.PostForm.Get("content"),
+		Expires: 			expires,
+	}
+
+	// Check for blank title
+	 form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+
+	// Check title for max length
+	form.CheckField(
+		validator.MaxChars(form.Title, 100),
+		"title",
+		"This field cannot be more than 100 characters long")
+	
+	// Check for blank content
+	form.CheckField(
+		validator.NotBlank(form.Content),
+		"content",
+		"This field cannot be blank")
+
+	form.CheckField(
+		validator.PermittedInt(form.Expires, 1, 7, 365),
+		"expires",
+		"This field must equal 1, 7, or 365")
+
+	// Use Valid() method to check for any validation
+	// fails. If so, re-render the template, passing in
+	// the form
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)
+		return
+	}
+ 
+	// ADD TO DATABASE
 
 	// Pass data to SnippetModel.Insert() method.
 	// The ID is returned
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, expires)
 	if err != nil {
 		app.serverError(w, err)
 		return
