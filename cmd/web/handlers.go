@@ -180,12 +180,23 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 
+// userSignupForm struct takes in the form values from
+// the user signup form.
+type userSignupForm struct {
+	Name						string	`form:"name"`
+	Email						string	`form:"email"`
+	Password 				string	`form:"password"`
+	validator.Validator			`form:"-"`
+}
+
 /*
 	userSignup function displays the form for a
 	new user signup.
 */
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display signup form")
+	data := app.newTemplateData(r)
+	data.Form = userSignupForm{}
+	app.render(w, http.StatusOK, "signup.tmpl", data)
 }
 
 /*
@@ -193,7 +204,82 @@ func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
 	up a new user.
 */
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Create a new user")
+	// Create an instance of userSignupForm struct
+	var form userSignupForm
+
+	// Parse the form data into the struct
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Validate the name field is not blank
+	form.CheckField(
+		validator.NotBlank(form.Name),
+		"name",
+		"This field cannot be blank",
+	)
+
+	form.CheckField(
+		validator.NotBlank(form.Email),
+		"email",
+		"This field cannot be blank",
+	)
+
+	form.CheckField(
+		validator.Matches(form.Email, validator.EmailRX),
+		"email",
+		"This field must be a valid email address",
+	)
+
+	form.CheckField(
+		validator.NotBlank(form.Password),
+		"password",
+		"This field cannot be blank",
+	)
+
+	form.CheckField(
+		validator.MinChars(form.Password, 8),
+		"password",
+		"This field must be at least 8 characters long",
+	)
+
+	// Check for form errors. If any redisplay the form
+	// with a 422 status code.
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "signup.tmpl", data)
+		return
+	}
+
+	// Create a new user in the database and
+	// check for errors
+	err = app.users.Insert(form.Name, form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateEmail) {
+			form.AddFieldError("email", "Email address is already in use")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusUnprocessableEntity, "signup.tmpl", data)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// If no errors, add confirmation flash message
+	// to session confirming signup.
+	app.sessionManager.Put(
+		r.Context(),
+		"flash",
+		"Signup was successful. Please log in",
+	)
+
+	// Redirect to login page
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+
 }
 
 /*

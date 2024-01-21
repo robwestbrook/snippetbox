@@ -2,7 +2,10 @@ package models
 
 import (
 	"database/sql"
+	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // User defines a User type.
@@ -24,6 +27,40 @@ type UserModel struct {
 	Insert adds a new record to the users table
 */
 func (m *UserModel) Insert(name, email, password string) error {
+	// Get the time right now for database record
+	// created field
+	now := time.Now()
+	
+	// Create a bcrypt hash of the password
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(password), 12,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Create the SQL statement to insert user into db
+	stmt := `
+		INSERT INTO users (name, email, hashed_password, created)
+		VALUES(?, ?, ?, ?)
+	`
+
+	// Use the Exec() method to insert user data and
+	// hashed password into users table
+	_, err = m.DB.Exec(stmt, name, email, string(hashedPassword), now.Format(dbTimeFormat))
+
+	// If there is an error, process the error.
+	// If the error string contains "UNIQUE" and "users.email"
+	// it is an SQLite error for duplicate emails.
+	// Return ErrDuplicateEmail. Else return err.
+	if err != nil {
+		errString := err.Error()
+		if strings.Contains(errString, "UNIQUE") && 
+				strings.Contains(errString, "users.email") {
+					return ErrDuplicateEmail
+				}
+		return err
+	}
 	return nil
 }
 
