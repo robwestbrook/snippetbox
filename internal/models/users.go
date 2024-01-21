@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"strings"
 	"time"
 
@@ -70,7 +71,43 @@ func (m *UserModel) Insert(name, email, password string) error {
 	returned.
 */
 func (m *UserModel) Authenticate(email, password string) (int, error) {
-	return 0, nil
+	// Get the ID and hashed password associated with the
+	// given email. If no email matches, return 
+	// ErrInvalidCredentials error
+	var id int
+	var hashedPassword []byte
+
+	// Create SQL statement to retrieve user
+	stmt := `
+		SELECT id, hashed_password FROM users
+		WHERE email = ?
+		`
+	
+	// Query the database and scan in id and hashed password
+	// to the variables declared above
+	err := m.DB.QueryRow(stmt, email).Scan(&id, &hashedPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+
+	// Check hashed password against password user entered.
+	// If they don't match, return ErrInvalidCredentials
+	// error
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+
+	// If no errors, password is correct. Return user ID
+	return id, nil
 }
 
 /*

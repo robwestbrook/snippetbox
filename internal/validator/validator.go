@@ -7,10 +7,15 @@ import (
 	"unicode/utf8"
 )
 
-// Validator type containing a map of
-// validation errors for the form fields.
+// Validator type.
+// Contains:
+//	1. NonFieldErrors - validation errors slice not
+//											related to specific form fields
+//	2. FieldErrors - 	validation errors map related to
+//										specific form fields
 type Validator struct {
-	FieldErrors		map[string]string
+	NonFieldErrors	[]string
+	FieldErrors			map[string]string
 }
 
 // Use the regexp.MustCompile() function to parse a
@@ -23,9 +28,16 @@ var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zAZ0-9]
 
 
 // Valid function returns true if FieldErrors map
-// doesn't contain any entries.
+// and NonFieldErrors slice don't contain any entries.
 func (v *Validator) Valid() bool {
-	return len(v.FieldErrors) == 0
+	return len(v.FieldErrors) == 0 &&
+					len(v.NonFieldErrors) == 0
+}
+
+// AddNonFieldError function adds an error message to
+// the NonFieldError slice.
+func (v *Validator) AddNonFieldError(message string) {
+	v.NonFieldErrors = append(v.NonFieldErrors, message)
 }
 
 // AddFieldError function adds an error message to the

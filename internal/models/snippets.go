@@ -90,8 +90,8 @@ func (m *SnippetModel) Get(id int) (*Snippet, error) {
 	
 	// Convert the record's time strings to Go's
 	// time.Time format and add to snippet struct
-	s.Created = stringToTime(dbTimeFormat, createdTime)
-	s.Expires = stringToTime(dbTimeFormat, expiredTime)
+	s.Created = stringToTime(createdTime)
+	s.Expires = stringToTime(expiredTime)
 
 	
 	// If the query returns no rows, row.Scan() returns
@@ -152,8 +152,8 @@ func (m *SnippetModel) Latest() ([]*Snippet, error) {
 		
 		// Convert the record's time strings to Go's
 		// time.Time format and add to snippet struct
-		s.Created = stringToTime(dbTimeFormat, createdTime)
-		s.Expires = stringToTime(dbTimeFormat, expiredTime)
+		s.Created = stringToTime(createdTime)
+		s.Expires = stringToTime(expiredTime)
 
 		if err != nil {
 			return nil, err
