@@ -2,6 +2,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -94,10 +95,13 @@ func main() {
 	// The scs.New() function returns a pointer to a struct
 	// which holds configuration settings for the sessions.
 	// Configure to use SQLite as session store, setting
-	// a lifetime of 12 hours for session.
+	// a lifetime of 12 hours for session. Set "Secure"
+	// to ensure a cookie will only be sent using an
+	// HTTPS connection.
 	sessionManager := scs.New()
 	sessionManager.Store = sqlite3store.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
 
 	// Initialize a new instance of the application struct,
 	// containing the dependencies. This makes all
@@ -119,19 +123,38 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
-	// Initialize a new http.Server struct
-	// Set the Addr and Handler fields so the server uses
-	// the addr flag and app.routes, and set the
-	// ErrorLog field so the server uses the custom
-	// errorLog logger
+	// Initialize a tls.Config struct to hold non-default
+	// TLS settings for the server. Here, change the curve
+	// preference value, so that only elliptic curves with
+	// assembly implementations are used.
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
+	// Initialize a new http.Server struct using the
+	// following parameters:
+	//	1.	Addr: the TCP address the server listens on
+	//	2.	ErrorLog: logger to use for errors
+	//	3. 	Handler: the handler for routing
+	//	4.	TLSConfig: provides optional TLS configuration
+	//	5.	IdleTimeout: Max time to wait for next request when keep-alive is enabled
+	//	6.	ReadTimeout: Max time for reading entire request
+	//	7.	WriteTimeout: max time before timing out writes of the response
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
 		Handler:  app.routes(),
+		TLSConfig: tlsConfig,
+		IdleTimeout: time.Minute,
+		ReadTimeout: 5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
-	// Start server using defined loggers
+	// Start server using defined loggers. Using the
+	// ListenAndServeTLS() to start an HTTPS server,
+	// passing in the paths to the TLS certificate and
+	// corresponding private key as the two parameters.
 	infoLog.Printf("Starting server on port %s", *addr)
-	errSrv := srv.ListenAndServe()
+	errSrv := srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(errSrv)
 }
