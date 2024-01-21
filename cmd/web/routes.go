@@ -28,6 +28,24 @@ import (
 				|										|										| new
 				|										|										| snippet
 
+	GET		| /user/signup			| userSignup				| Display form
+				|										|										| for signing up
+				|										|										| new user
+
+	POST	| /user/signup			| userSignupPost		| Create a
+				|										|										| new user
+
+	GET		| /user/login				| userLogin					| display form
+				|										|										| for logging in
+				|										|										| a user
+
+	POST	| /user/login				|										| Authenticate
+				|										|										| and login
+				|										|										| a user
+
+	POST	| /user/logout			| userLogoutPost		| Logout a
+				|										|										| user
+
 	GET		| /static/*filepath	|	http.Fileserver		| serve
 				|										|										|	static
 				|										|										| file
@@ -69,6 +87,11 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
 	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
 	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
+	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
+	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignupPost))
+	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
+	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
+	router.Handler(http.MethodPost, "/user/logout", dynamic.ThenFunc(app.userLogoutPost))
 
 	// Create a middleware chain containing the "standard"
 	// middleware which will be sent for every request

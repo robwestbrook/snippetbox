@@ -11,7 +11,6 @@ import (
 	"os"
 	"time"
 
-	// "github.com/alexedwards/scs"
 	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
@@ -23,10 +22,20 @@ import (
 // wide dependencies for the application. The route
 // handlers will become methods against this
 // application struct.
+//
+// Dependencies available:
+//	1. errorLog - error logger
+//	2. infoLog - information logger
+//	3. snippets - snippet model and methods
+//	4. users - user model and methods
+//	5. templateCache - template in-memory cache
+// 	6. formDecoder - decodes all form input
+//	7. sessionManager - manages all user sessions
 type application struct {
 	errorLog 				*log.Logger
 	infoLog  				*log.Logger
 	snippets 				*models.SnippetModel
+	users						*models.UserModel
 	templateCache		map[string]*template.Template
 	formDecoder			*form.Decoder
 	sessionManager	*scs.SessionManager
@@ -83,6 +92,7 @@ func main() {
 	defer db.Close()
 
 	// Initialize a new template cache.
+	// newTemplateCache() - cmd/web/templates.go
 	templateCache, err := newTemplateCache()
 	if err != nil {
 		errorLog.Fatal(err)
@@ -111,13 +121,15 @@ func main() {
 	//	1. errorLog - error logger
 	//	2. infoLog - information logger
 	//	3. snippets - snippet model and methods
-	//	4. templateCache - template in-memory cache
-	// 	5. formDecoder - decodes all form input
-	//	6. sessionManager - manages all user sessions
+	//	4. users - users model and methods
+	//	5. templateCache - template in-memory cache
+	// 	6. formDecoder - decodes all form input
+	//	7. sessionManager - manages all user sessions
 	app := &application{
 		errorLog: 			errorLog,
 		infoLog:  			infoLog,
 		snippets: 			&models.SnippetModel{DB: db},
+		users: 					&models.UserModel{DB: db},
 		templateCache: 	templateCache,
 		formDecoder: 		formDecoder,
 		sessionManager: sessionManager,

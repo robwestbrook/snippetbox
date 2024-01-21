@@ -179,3 +179,41 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// Redirect user to new snippet page
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
+
+/*
+	userSignup function displays the form for a
+	new user signup.
+*/
+func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display signup form")
+}
+
+/*
+	userSignupPost processes the signup form and signs
+	up a new user.
+*/
+func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Create a new user")
+}
+
+/*
+	userLogin displays the form for a user to log in.
+*/
+func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display login form")
+}
+
+/*
+	userLoginPost processes the login form and logs in
+	a user.
+*/
+func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Login user")
+}
+
+/*
+	userLogoutPost logs a user out.
+*/
+func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Logout user")
+}
