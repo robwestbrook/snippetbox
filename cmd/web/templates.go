@@ -16,6 +16,7 @@ import (
 //	4. Form - hold any submitted form data
 //	5. Flash - holds any flash message generated
 // 	6. IsAuthenticated - holds true or false for authenticated users
+//	7. CSRFToken - Adds a CSRFToken
 type templateData struct {
 	CurrentYear			int
 	Snippet					*models.Snippet
@@ -23,6 +24,7 @@ type templateData struct {
 	Form						any
 	Flash						string
 	IsAuthenticated	bool
+	CSRFToken				string
 }
 
 /*

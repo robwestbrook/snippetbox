@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-playground/form/v4"
+	"github.com/justinas/nosurf"
 )
 
 // ServerError helper.
@@ -42,11 +43,14 @@ func (app *application) notFound(w http.ResponseWriter) {
 // fields:
 //	1. The current year - adds the current year to a template
 //	2. Flash message - adds a flash message to a template
+//	3. IsAuthenticated - checks for authenticated user
+//	4. CSRFToken - Adds a CSRF token
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear: 			time.Now().Year(),
 		Flash: 						app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: 	app.isAuthenticated(r),
+		CSRFToken: 				nosurf.Token(r),
 	}
 }
 
