@@ -68,3 +68,27 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+/*
+	requireAuthentication protects a page from an
+	unauthorized user if it is only for athenticated users
+*/
+func (app *application) requireAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// If the user is not authenticated, redirect to
+		// the login page. Return from the middleware
+		// chain so no other middleware handlers are called
+		if !app.isAuthenticated(r) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+
+		// If the user is authenticated, set the
+		// "Cache-Control: no-store" header so pages requiring
+		// authentication are not stored in the browser cache
+		w.Header().Add("Cache-Control", "no-store")
+
+		// Call the next handler in the chain
+		next.ServeHTTP(w, r)
+	})
+}

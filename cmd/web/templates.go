@@ -8,12 +8,21 @@ import (
 	"github.com/robwestbrook/snippetbox/internal/models"
 )
 
+// templateData struct is used to pass information
+// to the templates. This data includes:
+//	1. CurrentYear - the current year
+//	2. Snippet - holds the information of a single snippet
+//	3. Snippets - a slice of many snippets
+//	4. Form - hold any submitted form data
+//	5. Flash - holds any flash message generated
+// 	6. IsAuthenticated - holds true or false for authenticated users
 type templateData struct {
-	CurrentYear	int
-	Snippet			*models.Snippet 	// Hold a single snippet
-	Snippets		[]*models.Snippet	// holds many snippets
-	Form				any								// holds form data
-	Flash				string						// Hold flash message data
+	CurrentYear			int
+	Snippet					*models.Snippet
+	Snippets				[]*models.Snippet
+	Form						any
+	Flash						string
+	IsAuthenticated	bool
 }
 
 /*

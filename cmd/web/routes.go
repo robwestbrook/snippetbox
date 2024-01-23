@@ -80,19 +80,31 @@ func (app *application) routes() http.Handler {
 	//	1. LoadAndSave session middleware
 	dynamic := alice.New(app.sessionManager.LoadAndSave)
 
-	// Create Routes with methods, patterns, handlers.
-	// Wrap the handlers with the dynamic middleware for
-	// session control.
+	// UNPROTECTED ROUTES - Open to all app users
+
+	// Create routes with methods, patterns, 
+	// handlers. Wrap the unprotextedhandlers with the 
+	// DYNAMIC middleware for session control.
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
-	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
-	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
 	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignupPost))
 	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
 	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
-	router.Handler(http.MethodPost, "/user/logout", dynamic.ThenFunc(app.userLogoutPost))
 
+	// PROTECTED ROUTES- Only available to authenticated user
+
+	// Create a chain where the DYNAMIC middleware is
+	// appended with the REQUIREAUTHENTICATION middleware
+	protected := dynamic.Append(app.requireAuthentication)
+
+	// Create routes with methods, patterns, 
+	// handlers. Wrap the unprotextedhandlers with the 
+	// PROTECTED middleware for authenticated session control.
+	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreate))
+	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreatePost))
+	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
+	
 	// Create a middleware chain containing the "standard"
 	// middleware which will be sent for every request
 	// the application receives. Alice manages middleware 

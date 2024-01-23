@@ -44,8 +44,9 @@ func (app *application) notFound(w http.ResponseWriter) {
 //	2. Flash message - adds a flash message to a template
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		CurrentYear: 	time.Now().Year(),
-		Flash: 				app.sessionManager.PopString(r.Context(), "flash"),
+		CurrentYear: 			time.Now().Year(),
+		Flash: 						app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: 	app.isAuthenticated(r),
 	}
 }
 
@@ -111,4 +112,11 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 		return err
 	}
 	return nil
+}
+
+// isAuthenticated function returns true if the
+// current request is from an authenticated user,
+// otherwise returns false.
+func (app *application) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedID")
 }
