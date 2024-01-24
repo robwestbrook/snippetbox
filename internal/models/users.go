@@ -112,8 +112,22 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 
 /*
 	Exists is used to check if a user exists with
-	a specific ID
+	a specific ID. If the user exists in the database,
+	return true, otherwise false.
 */
 func (m *UserModel) Exists(id int) (bool, error) {
-	return false, nil
+	// Create a boolean variable exists
+	var exists bool
+
+	// Create SQL statement to check for existence
+	// of user ID
+	stmt := `
+		SELECT EXISTS(SELECT true FROM users WHERE id = ?)
+	`
+
+	// Query database
+	err := m.DB.QueryRow(stmt, id).Scan(&exists)
+
+	// Return exists and err
+	return exists, err
 }

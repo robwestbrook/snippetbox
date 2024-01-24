@@ -79,7 +79,11 @@ func (app *application) routes() http.Handler {
 	// Includes:
 	//	1. LoadAndSave session middleware
 	//	2. noSurf CSRF preventing middleware
-	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
+	dynamic := alice.New(
+		app.sessionManager.LoadAndSave, 
+		noSurf,
+		app.authenticate,
+	)
 
 	// UNPROTECTED ROUTES - Open to all app users
 
